@@ -1,120 +1,165 @@
-// Dummy data for testing (we'll replace with MongoDB later)
-let books = [
-  {
-    id: '1',
-    title: 'The Great Gatsby',
-    author: 'F. Scott Fitzgerald',
-    year: 1925,
-    genre: 'Classic',
-    rating: 4,
-    isRead: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: '2',
-    title: 'To Kill a Mockingbird',
-    author: 'Harper Lee',
-    year: 1960,
-    genre: 'Classic',
-    rating: 5,
-    isRead: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-];
+const Book = require('../models/books');
 
 // @desc    Get all books
 // @route   GET /api/v1/books
 // @access  Public
-exports.getBooks = (req, res) => {
-  res.status(200).json({
-    success: true,
-    count: books.length,
-    data: books
-  });
+exports.getBooks = async (req, res) => {
+  try {
+    const books = await Book.find();
+
+    res.status(200).json({
+      success: true,
+      count: books.length,
+      data: books
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: 'Server Error'
+    });
+  }
 };
 
 // @desc    Get single book
 // @route   GET /api/v1/books/:id
 // @access  Public
-exports.getBook = (req, res) => {
-  const book = books.find(b => b.id === req.params.id);
+exports.getBook = async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
 
-  if (!book) {
-    return res.status(404).json({
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        error: 'Book not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: book
+    });
+  } catch (err) {
+    // Check if error is a casting error (invalid ObjectId)
+    if (err.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid book ID format'
+      });
+    }
+
+    res.status(500).json({
       success: false,
-      error: 'Book not found'
+      error: 'Server Error'
     });
   }
-
-  res.status(200).json({
-    success: true,
-    data: book
-  });
 };
 
 // @desc    Create new book
 // @route   POST /api/v1/books
 // @access  Public
-exports.createBook = (req, res) => {
-  const newBook = {
-    id: (books.length + 1).toString(),
-    ...req.body,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
+exports.createBook = async (req, res) => {
+  try {
+    const book = await Book.create(req.body);
 
-  books.push(newBook);
+    res.status(201).json({
+      success: true,
+      data: book
+    });
+  } catch (err) {
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(val => val.message);
 
-  res.status(201).json({
-    success: true,
-    data: newBook
-  });
+      return res.status(400).json({
+        success: false,
+        error: messages
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Server Error'
+    });
+  }
 };
 
 // @desc    Update book
 // @route   PUT /api/v1/books/:id
 // @access  Public
-exports.updateBook = (req, res) => {
-  const index = books.findIndex(b => b.id === req.params.id);
+exports.updateBook = async (req, res) => {
+  try {
+    const book = await Book.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+        runValidators: true
+      }
+    );
 
-  if (index === -1) {
-    return res.status(404).json({
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        error: 'Book not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: book
+    });
+  } catch (err) {
+    if (err.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid book ID format'
+      });
+    }
+
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(val => val.message);
+
+      return res.status(400).json({
+        success: false,
+        error: messages
+      });
+    }
+
+    res.status(500).json({
       success: false,
-      error: 'Book not found'
+      error: 'Server Error'
     });
   }
-
-  books[index] = {
-    ...books[index],
-    ...req.body,
-    updatedAt: new Date()
-  };
-
-  res.status(200).json({
-    success: true,
-    data: books[index]
-  });
 };
 
 // @desc    Delete book
 // @route   DELETE /api/v1/books/:id
 // @access  Public
-exports.deleteBook = (req, res) => {
-  const index = books.findIndex(b => b.id === req.params.id);
+exports.deleteBook = async (req, res) => {
+  try {
+    const book = await Book.findByIdAndDelete(req.params.id);
 
-  if (index === -1) {
-    return res.status(404).json({
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        error: 'Book not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {}
+    });
+  } catch (err) {
+    if (err.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid book ID format'
+      });
+    }
+
+    res.status(500).json({
       success: false,
-      error: 'Book not found'
+      error: 'Server Error'
     });
   }
-
-  books.splice(index, 1);
-
-  res.status(200).json({
-    success: true,
-    data: {}
-  });
 };

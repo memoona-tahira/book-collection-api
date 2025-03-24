@@ -52,3 +52,53 @@ Book JSON:
   "createdAt": "2023-03-15T14:30:20.123Z",
   "updatedAt": "2023-03-15T14:30:20.123Z"
 }
+```
+
+### Get All Books
+Retrieve all books from the database.
+
+```bash
+curl -X GET http://localhost:5001/api/v1/books
+```
+
+### Get Single Book
+Retrieve a specific book by its ID.
+
+```bash
+curl -X GET http://localhost:5001/api/v1/books/67e132dedc7a21daa9447bdd
+```
+
+### Create a New Book
+Add a new book to the database.
+
+```bash
+curl -X POST http://localhost:5001/api/v1/books \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "The Great Gatsby",
+    "author": "F. Scott Fitzgerald",
+    "year": 1925,
+    "genre": "Classic",
+    "rating": 5,
+    "isRead": true
+  }'
+```
+
+### Update a Book
+Update specific properties of an existing book.
+
+```bash
+curl -X PUT http://localhost:5001/api/v1/books/67e132dedc7a21daa9447bdd \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rating": 4,
+    "genre": "American Literature"
+  }'
+```
+
+### Delete a Book
+Remove a book from the database.
+
+```bash
+curl -X DELETE http://localhost:5001/api/v1/books/67e132dedc7a21daa9447bdd
+```
