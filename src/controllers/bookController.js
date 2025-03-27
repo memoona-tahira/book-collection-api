@@ -5,11 +5,45 @@ const Book = require('../models/books');
 // @access  Public
 exports.getBooks = async (req, res) => {
   try {
-    const books = await Book.find();
+    // Build query
+    let query = {};
+
+    // Filter by genre if provided
+    if (req.query.genre) {
+      query.genre = req.query.genre;
+    }
+
+    // Filter by author if provided
+    if (req.query.author) {
+      query.author = { $regex: req.query.author, $options: 'i' }; // Case-insensitive search
+    }
+
+    // Filter by minimum rating
+    if (req.query.minRating) {
+      query.rating = { $gte: parseInt(req.query.minRating) };
+    }
+
+    // Filter by read status
+    if (req.query.isRead) {
+      query.isRead = req.query.isRead === 'true';
+    }
+
+    // Add pagination (as in previous example)
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const startIndex = (page - 1) * limit;
+
+    const total = await Book.countDocuments(query);
+    const books = await Book.find(query).limit(limit).skip(startIndex);
 
     res.status(200).json({
       success: true,
       count: books.length,
+      pagination: {
+        total,
+        page,
+        pages: Math.ceil(total / limit)
+      },
       data: books
     });
   } catch (err) {
